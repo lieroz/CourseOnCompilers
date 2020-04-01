@@ -14,13 +14,13 @@ Node SyntaxTree::generateSyntaxTree(std::string_view regexp)
         switch (c)
         {
             case '|':
-                alternate(nodeId, node);
+                alternate(node);
                 break;
             case '&':
-                concatenate(nodeId, node);
+                concatenate(node);
                 break;
             case '*':
-                star(nodeId, node);
+                star(node);
                 break;
             default:
                 node.firstPos.insert(nodeId);
@@ -47,7 +47,7 @@ const SyntaxTree::FollowPos &SyntaxTree::getFollowPos() const
     return followPos;
 }
 
-void SyntaxTree::alternate(size_t nodeId, Node &node)
+void SyntaxTree::alternate(Node &node)
 {
     auto c2 = stack.top();
     stack.pop();
@@ -65,7 +65,7 @@ void SyntaxTree::alternate(size_t nodeId, Node &node)
     stack.push(node);
 }
 
-void SyntaxTree::concatenate(size_t nodeId, Node &node)
+void SyntaxTree::concatenate(Node &node)
 {
     auto c2 = stack.top();
     stack.pop();
@@ -103,7 +103,7 @@ void SyntaxTree::concatenate(size_t nodeId, Node &node)
     }
 }
 
-void SyntaxTree::star(size_t nodeId, Node &node)
+void SyntaxTree::star(Node &node)
 {
     auto c1 = stack.top();
     stack.pop();

@@ -25,9 +25,9 @@ public:
     const FollowPos &getFollowPos() const;
 
 private:
-    void alternate(size_t nodeId, Node &node);
-    void concatenate(size_t nodeId, Node &node);
-    void star(size_t nodeId, Node &node);
+    void alternate(Node &node);
+    void concatenate(Node &node);
+    void star(Node &node);
 
 private:
     std::stack<Node> stack;
