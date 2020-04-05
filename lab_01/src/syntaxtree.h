@@ -20,9 +20,14 @@ class SyntaxTree
     using FollowPos = std::unordered_map<size_t, std::set<size_t>>;
 
 public:
-    Node generateSyntaxTree(std::string_view regexp);
+    void create(std::string_view regexp);
+
+    const Node &getRoot() const;
     const Tree &getSyntaxTree() const;
     const FollowPos &getFollowPos() const;
+    const std::set<char> &getAlphabet() const;
+
+    std::string toString() const;
 
 private:
     void alternate(Node &node);
@@ -30,7 +35,9 @@ private:
     void star(Node &node);
 
 private:
+    Node root;
     std::stack<Node> stack;
     Tree syntaxTree;
     FollowPos followPos;
+    std::set<char> alphabet;
 };

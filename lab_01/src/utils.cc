@@ -52,8 +52,6 @@ auto formatRegexp(std::string_view regex)
     }
 
     result.push_back(regex.back());
-    result.push_back('&');
-    result.push_back(regexpEndingSymbol);
     return result;
 }
 
@@ -110,5 +108,7 @@ std::string infixToPostfix(std::string_view infix)
         stack.pop();
     }
 
+    postfix.push_back(regexpEndingSymbol);
+    postfix.push_back('&');
     return postfix;
 }

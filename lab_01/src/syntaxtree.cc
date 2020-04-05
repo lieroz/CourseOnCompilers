@@ -1,6 +1,10 @@
 #include "syntaxtree.h"
 
-Node SyntaxTree::generateSyntaxTree(std::string_view regexp)
+#include <sstream>
+
+inline constexpr char regexpEndingSymbol = '#';
+
+void SyntaxTree::create(std::string_view regexp)
 {
     syntaxTree.clear();
     followPos.clear();
@@ -26,15 +30,24 @@ Node SyntaxTree::generateSyntaxTree(std::string_view regexp)
                 node.firstPos.insert(nodeId);
                 node.lastPos.insert(nodeId);
                 stack.push(node);
+
+                if (c != regexpEndingSymbol)
+                {
+                    alphabet.insert(c);
+                }
                 break;
         }
 
         syntaxTree[nodeId++] = node;
     }
 
-    auto tmp = stack.top();
+    root = stack.top();
     stack.pop();
-    return tmp;
+}
+
+const Node &SyntaxTree::getRoot() const
+{
+    return root;
 }
 
 const SyntaxTree::Tree &SyntaxTree::getSyntaxTree() const
@@ -45,6 +58,68 @@ const SyntaxTree::Tree &SyntaxTree::getSyntaxTree() const
 const SyntaxTree::FollowPos &SyntaxTree::getFollowPos() const
 {
     return followPos;
+}
+
+const std::set<char> &SyntaxTree::getAlphabet() const
+{
+    return alphabet;
+}
+
+std::string SyntaxTree::toString() const
+{
+    const auto &dfaStartState = getRoot();
+    std::stringstream ss;
+
+    ss << "=====================\n";
+    ss << "SYNTAX TREE\n";
+    ss << "=====================\n\n";
+
+    for (const auto &[pos, node]: getSyntaxTree())
+    {
+        ss << "POS: " << pos;
+        ss << "\nSYMBOL: " << node.symbol;
+        ss << "\nNULLABLE: " << node.nullable;
+
+        ss << "\nFIRST POS: ";
+        std::copy(std::begin(node.firstPos), std::end(node.firstPos),
+            std::ostream_iterator<size_t>(ss, " "));
+
+        ss << "\nLAST POS: ";
+        std::copy(std::begin(node.lastPos), std::end(node.lastPos),
+            std::ostream_iterator<size_t>(ss, " "));
+        ss << "\n\n";
+    }
+
+    ss << "=====================\n";
+    ss << "FOLLOW POSITIONS\n";
+    ss << "=====================\n\n";
+
+    for (const auto &[pos, followPos]: getFollowPos())
+    {
+        ss << "POS: " << pos;
+        ss << "\nFOLLOW POS: ";
+        std::copy(
+            std::begin(followPos), std::end(followPos), std::ostream_iterator<size_t>(ss, " "));
+        ss << "\n\n";
+    }
+
+    ss << "=====================\n";
+    ss << "ROOT\n";
+    ss << "=====================\n\n";
+
+    ss << "SYMBOL: " << dfaStartState.symbol;
+    ss << "\nNULLABLE: " << dfaStartState.nullable;
+
+    ss << "\nFIRST POS: ";
+    std::copy(std::begin(dfaStartState.firstPos), std::end(dfaStartState.firstPos),
+        std::ostream_iterator<size_t>(ss, " "));
+
+    ss << "\nLAST POS: ";
+    std::copy(std::begin(dfaStartState.lastPos), std::end(dfaStartState.lastPos),
+        std::ostream_iterator<size_t>(ss, " "));
+
+    ss << "\n\n<<<<<<<<<<<<<<<<<<<<<\n";
+    return ss.str();
 }
 
 void SyntaxTree::alternate(Node &node)
