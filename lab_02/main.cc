@@ -8,10 +8,10 @@ using Grammar = std::map<std::string, std::set<std::string>>;
 static constexpr auto print = [](auto &&grammar) {
     for (auto &&[nonterm, rules]: grammar)
     {
-        std::cout << "NON TERM: " << nonterm << " -> ";
-        std::copy(std::begin(rules), std::end(rules),
+        std::cout << "nonterm: " << nonterm << " -> ";
+        std::copy(std::begin(rules), --std::end(rules),
             std::ostream_iterator<std::string>(std::cout, " | "));
-        std::cout << '\n';
+        std::cout << *(--std::end(rules)) << '\n';
     }
 };
 
@@ -22,6 +22,15 @@ static constexpr auto isRecursiveRule = [](auto &&rule, auto &&nonterm) {
         return true;
     }
     return false;
+};
+
+static constexpr auto generateNewNonterm = [](auto &&grammar, auto &&nonterm) {
+    auto newNonterm = nonterm;
+    do
+    {
+        newNonterm += "'";
+    } while (grammar.find(newNonterm) != std::end(grammar));
+    return newNonterm;
 };
 
 Grammar eliminateLeftRecursion(const Grammar &grammar)
@@ -57,7 +66,7 @@ Grammar eliminateLeftRecursion(const Grammar &grammar)
 
         std::set<std::string> changedRules;
         std::set<std::string> newNontermRules;
-        auto newNonterm = nontermI + "'";
+        auto newNonterm = generateNewNonterm(newGrammar, nontermI);
 
         for (auto &&rule: rulesI)
         {
@@ -82,6 +91,76 @@ Grammar eliminateLeftRecursion(const Grammar &grammar)
     return newGrammar;
 }
 
+static constexpr auto commonPrefixUtil = [](auto &&a, auto &&b) {
+    std::string result;
+    auto itA = std::begin(a);
+    auto itB = std::begin(b);
+    for (; (itA != std::end(a) && itB != std::end(b)) && (*itA == *itB); ++itA, ++itB)
+    {
+        result.push_back(*itA);
+    }
+    return result;
+};
+
+static constexpr auto commonPrefix = [](auto &&begin, auto &&end) {
+    auto prefix = *begin;
+    std::for_each(begin, end, [&](auto &&str) { prefix = commonPrefixUtil(prefix, str); });
+    return prefix;
+};
+
+static constexpr auto findAllCommonPrefixes = [](auto &&container) {
+    std::vector<std::string> prefixes;
+
+    auto begin = std::begin(container);
+    auto end = std::end(container);
+
+    for (; begin != std::end(container);)
+    {
+        if (auto prefix = commonPrefix(begin, end); prefix.empty())
+        {
+            --end;
+        }
+        else
+        {
+            prefixes.push_back(prefix);
+            begin = end;
+            end = std::end(container);
+        }
+    }
+
+    return prefixes;
+};
+
+Grammar leftFactoring(const Grammar &grammar)
+{
+    auto newGrammar = grammar;
+
+    for (auto &&[nonterm, rules]: grammar)
+    {
+        if (rules.size() > 1)
+        {
+            for (auto &&prefix: findAllCommonPrefixes(rules))
+            {
+                std::cout << prefix << std::endl;
+                auto newNonterm = generateNewNonterm(newGrammar, nonterm);
+                newGrammar[nonterm].insert(prefix + newNonterm);
+
+                for (auto &&rule: rules)
+                {
+                    if (rule.find_first_of(prefix) == 0)
+                    {
+                        auto expr = rule.substr(prefix.size());
+                        newGrammar[newNonterm].insert(expr.empty() ? "?" : expr);
+                        newGrammar[nonterm].erase(rule);
+                    }
+                }
+            }
+        }
+    }
+
+    return newGrammar;
+}
+
 int main()
 {
     Grammar grammar = {
@@ -91,8 +170,14 @@ int main()
         /* {"F", {"a", "(E)"}}, */
     };
 
-    auto newGrammar = eliminateLeftRecursion(grammar);
-    print(newGrammar);
+    auto newGrammar1 = eliminateLeftRecursion(grammar);
+    print(newGrammar1);
+
+    auto newGrammar2 = leftFactoring(newGrammar1);
+    print(newGrammar2);
+
+    /* std::set<std::string> arr = {"Sa", "Sb", "Aa", "Ab"}; */
+    /* findAllCommonPrefixes(arr); */
 
     return 0;
 }
