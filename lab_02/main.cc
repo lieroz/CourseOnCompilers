@@ -1,11 +1,16 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <queue>
 #include <iostream>
+
+static inline const char *epsilon = "?";
 
 using Grammar = std::map<std::string, std::set<std::string>>;
 
 static constexpr auto print = [](auto &&grammar) {
+    std::cout << "GRAMMAR:\n";
+    std::cout << "===\n";
     for (auto &&[nonterm, rules]: grammar)
     {
         std::cout << "nonterm: " << nonterm << " -> ";
@@ -13,6 +18,7 @@ static constexpr auto print = [](auto &&grammar) {
             std::ostream_iterator<std::string>(std::cout, " | "));
         std::cout << *(--std::end(rules)) << '\n';
     }
+    std::cout << "===\n\n";
 };
 
 static constexpr auto isRecursiveRule = [](auto &&rule, auto &&nonterm) {
@@ -32,6 +38,64 @@ static constexpr auto generateNewNonterm = [](auto &&grammar, auto &&nonterm) {
     } while (grammar.find(newNonterm) != std::end(grammar));
     return newNonterm;
 };
+
+std::vector<std::string> findEpsilonNonterms(const Grammar &grammar)
+{
+    std::queue<std::string> epsilonNonterms;
+    std::map<std::string, std::string> reversedGrammar;
+    std::map<std::string, size_t> rulesCounters;
+    std::map<std::string, std::set<std::string>> concernedRules;
+
+    for (auto &&[nontermI, rulesI]: grammar)
+    {
+        for (auto &&[nontermJ, rulesJ]: grammar)
+        {
+            for (auto &&rule: rulesJ)
+            {
+                if (rule.find(nontermI) != std::string::npos)
+                {
+                    concernedRules[nontermI].insert(rule);
+                    ++rulesCounters[rule];
+                }
+            }
+        }
+
+        for (auto &&rule: rulesI)
+        {
+            if (rule == epsilon)
+            {
+                epsilonNonterms.push(nontermI);
+            }
+            reversedGrammar.emplace(rule, nontermI);
+        }
+    }
+
+    std::vector<std::string> result;
+    for (; !epsilonNonterms.empty();)
+    {
+        auto nonterm = epsilonNonterms.front();
+        epsilonNonterms.pop();
+
+        for (auto &&rule: concernedRules[nonterm])
+        {
+            auto &&counter = --rulesCounters[rule];
+            if (counter == 0)
+            {
+                epsilonNonterms.push(reversedGrammar[rule]);
+            }
+        }
+
+        result.push_back(nonterm);
+    }
+
+    return result;
+}
+
+Grammar removeEpsilonNonterms(const Grammar &grammar)
+{
+    auto newGrammar = grammar;
+    return newGrammar;
+}
 
 Grammar eliminateLeftRecursion(const Grammar &grammar)
 {
@@ -141,7 +205,6 @@ Grammar leftFactoring(const Grammar &grammar)
         {
             for (auto &&prefix: findAllCommonPrefixes(rules))
             {
-                std::cout << prefix << std::endl;
                 auto newNonterm = generateNewNonterm(newGrammar, nonterm);
                 newGrammar[nonterm].insert(prefix + newNonterm);
 
@@ -150,7 +213,7 @@ Grammar leftFactoring(const Grammar &grammar)
                     if (rule.find_first_of(prefix) == 0)
                     {
                         auto expr = rule.substr(prefix.size());
-                        newGrammar[newNonterm].insert(expr.empty() ? "?" : expr);
+                        newGrammar[newNonterm].insert(expr.empty() ? epsilon : expr);
                         newGrammar[nonterm].erase(rule);
                     }
                 }
@@ -178,6 +241,19 @@ int main()
 
     /* std::set<std::string> arr = {"Sa", "Sb", "Aa", "Ab"}; */
     /* findAllCommonPrefixes(arr); */
+
+    Grammar epsGrammar = {
+        {"S", {"ABC", "DS"}},
+        {"A", {epsilon}},
+        {"B", {"AC"}},
+        {"C", {epsilon}},
+        {"D", {"d"}},
+    };
+
+    auto epsilonNonterms = findEpsilonNonterms(epsGrammar);
+    std::copy(std::begin(epsilonNonterms), std::end(epsilonNonterms),
+        std::ostream_iterator<std::string>(std::cout, " "));
+    std::cout << std::endl;
 
     return 0;
 }
