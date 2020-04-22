@@ -11,9 +11,9 @@ Grammar deleteLongRules(const Grammar &grammar)
         for (auto &&rule: rules)
         {
             auto currentNonterm = nonterm;
-            size_t i = 0;
+            int i = 0;
 
-            for (; i < rule.size() - 2; ++i)
+            for (; i < static_cast<int>(rule.size()) - 2; ++i)
             {
                 auto nextNonterm = generateNewNonterm(grammar, currentNonterm);
                 newGrammar[currentNonterm].insert(rule[i] + nextNonterm);

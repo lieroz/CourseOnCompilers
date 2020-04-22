@@ -3,32 +3,18 @@
 
 int main()
 {
-    /* Grammar grammar = { */
-    /*     {"S", {"aS'", "aZ"}}, */
-    /*     {"X", {"aY", "bY", epsilon}}, */
-    /*     {"Y", {"X", "cc"}}, */
-    /*     {"Z", {"ZX"}}, */
-    /*     {"S'", {"XS''"}}, */
-    /*     {"S''", {"yX"}}, */
-    /* }; */
-
-    /* auto newGrammar = removeEpsilonNonterms(grammar); */
-    /* print(newGrammar); */
-
     Grammar grammar = {
-        {"S", {"AB"}},
-        {"A", {"aBcB"}},
-        {"B", {"def"}},
+        {"S", {"aXbX", "aZ"}},
+        {"X", {"aY", "bY", epsilon}},
+        {"Y", {"X", "cc"}},
+        {"Z", {"ZX"}},
     };
 
-    auto newGrammar = deleteLongRules(grammar);
-    print(newGrammar);
+    auto newGrammar1 = deleteLongRules(grammar);
+    print(newGrammar1);
 
-    /* auto newGrammar1 = eliminateLeftRecursion(grammar); */
-    /* print(newGrammar1); */
-
-    /* auto newGrammar2 = leftFactoring(newGrammar1); */
-    /* print(newGrammar2); */
+    auto newGrammar2 = removeEpsilonNonterms(newGrammar1);
+    print(newGrammar2);
 
     return 0;
 }
