@@ -5,7 +5,6 @@ constexpr size_t longRuleSize = 2;
 Grammar deleteLongRules(const Grammar &grammar)
 {
     Grammar newGrammar;
-
     for (auto &&[nonterm, rules]: grammar)
     {
         for (auto &&rule: rules)
@@ -23,14 +22,12 @@ Grammar deleteLongRules(const Grammar &grammar)
             newGrammar[currentNonterm].insert(rule.substr(i));
         }
     }
-
     return newGrammar;
 }
 
 Grammar deleteChainRules(const Grammar &grammar)
 {
-    Grammar newGrammar = grammar;
-
+    auto newGrammar = grammar;
     for (auto &&[nonterm, rules]: grammar)
     {
         for (auto &&rule: rules)
@@ -43,6 +40,5 @@ Grammar deleteChainRules(const Grammar &grammar)
             }
         }
     }
-
     return newGrammar;
 }
