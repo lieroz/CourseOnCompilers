@@ -114,6 +114,23 @@ TEST(removeEpsilonNonterms, TestsThatEpsilonNonTermsAreRemoved)
     ASSERT_THAT(newGrammar["S"], testing::ElementsAre("Ac", "Sb", "b"));
 }
 
+TEST(removeEpsilonNonterms, TestsThatEpsilonNonTermsAreRemoved2)
+{
+    Grammar grammar = {
+        {"S", {"ABCd"}},
+        {"A", {"a", epsilon}},
+        {"B", {"AC"}},
+        {"C", {"c", epsilon}},
+    };
+
+    auto newGrammar = removeEpsilonNonterms(grammar);
+    ASSERT_THAT(
+        newGrammar["S"], testing::ElementsAre("ABCd", "ABd", "ACd", "Ad", "BCd", "Bd", "Cd", "d"));
+    ASSERT_THAT(newGrammar["A"], testing::ElementsAre("a"));
+    ASSERT_THAT(newGrammar["B"], testing::ElementsAre("A", "AC", "C"));
+    ASSERT_THAT(newGrammar["C"], testing::ElementsAre("c"));
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

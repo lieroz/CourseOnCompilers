@@ -118,6 +118,7 @@ std::set<std::string> findAllPermutations(
         std::swap(result, newResult);
     }
 
+    result.erase("");
     return result;
 }
 
