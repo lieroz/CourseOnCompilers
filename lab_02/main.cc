@@ -39,6 +39,19 @@ static constexpr auto generateNewNonterm = [](auto &&grammar, auto &&nonterm) {
     return newNonterm;
 };
 
+bool ruleHasTerms(const Grammar &grammar, std::string rule)
+{
+    for (auto &&[nonterm, _]: grammar)
+    {
+        auto pos = rule.find(nonterm);
+        if (pos != std::string::npos)
+        {
+            rule.erase(pos, nonterm.size());
+        }
+    }
+    return !rule.empty();
+}
+
 std::set<std::string> findEpsilonNonterms(const Grammar &grammar)
 {
     std::queue<std::string> epsilonNonterms;
@@ -52,7 +65,7 @@ std::set<std::string> findEpsilonNonterms(const Grammar &grammar)
         {
             for (auto &&rule: rulesJ)
             {
-                if (rule.find(nontermI) != std::string::npos)
+                if (!ruleHasTerms(grammar, rule) && rule.find(nontermI) != std::string::npos)
                 {
                     concernedRules[nontermI].insert(rule);
                     ++rulesCounters[rule];
@@ -94,15 +107,80 @@ std::set<std::string> findEpsilonNonterms(const Grammar &grammar)
     return result;
 }
 
+std::set<std::string> findAllPermutations(
+    const std::set<std::string> &epsilonNonterms, std::string rule)
+{
+    std::vector<std::string> decomposed;
+
+    for (auto itI = std::begin(rule); itI != std::end(rule); ++itI)
+    {
+        std::string str;
+        str = *itI;
+
+        for (auto itJ = itI + 1; itJ != std::end(rule); ++itJ)
+        {
+            if (epsilonNonterms.find(str) == std::end(epsilonNonterms))
+            {
+                str += *itJ;
+            }
+        }
+
+        if (epsilonNonterms.find(str) == std::end(epsilonNonterms))
+        {
+            str = *itI;
+        }
+        else
+        {
+            itI += str.size() - 1;
+        }
+
+        decomposed.push_back(str);
+    }
+
+    std::set<std::string> result;
+    result.insert("");
+
+    for (auto &&i: decomposed)
+    {
+        std::set<std::string> newResult;
+        if (epsilonNonterms.find(i) != std::end(epsilonNonterms))
+        {
+            newResult = result;
+        }
+
+        for (auto &&j: result)
+        {
+            newResult.insert(j + i);
+        }
+        std::swap(result, newResult);
+    }
+
+    return result;
+}
+
 Grammar removeEpsilonNonterms(const Grammar &grammar)
 {
-    auto newGrammar = grammar;
+    Grammar newGrammar;
+    auto epsilonNonterms = findEpsilonNonterms(grammar);
+
+    for (auto &&[nonterm, rules]: grammar)
+    {
+        for (auto &&rule: rules)
+        {
+            if (rule != epsilon)
+            {
+                auto permutations = findAllPermutations(epsilonNonterms, rule);
+                newGrammar[nonterm].insert(std::begin(permutations), std::end(permutations));
+            }
+        }
+    }
+
     return newGrammar;
 }
 
 Grammar eliminateLeftRecursion(const Grammar &grammar)
 {
-    auto newGrammar = grammar;
+    auto newGrammar = removeEpsilonNonterms(grammar);
     std::vector<std::string> nonterms;
 
     std::transform(std::begin(newGrammar), std::end(newGrammar), std::back_inserter(nonterms),
@@ -213,7 +291,7 @@ Grammar leftFactoring(const Grammar &grammar)
 
                 for (auto &&rule: rules)
                 {
-                    if (rule.find_first_of(prefix) == 0)
+                    if (auto pos = rule.find(prefix); pos == 0)
                     {
                         auto expr = rule.substr(prefix.size());
                         newGrammar[newNonterm].insert(expr.empty() ? epsilon : expr);
@@ -230,7 +308,7 @@ Grammar leftFactoring(const Grammar &grammar)
 int main()
 {
     Grammar grammar = {
-        {"A", {"Sa"}}, {"S", {"Sb", "Ac", "b"}},
+        {"A", {"Sa"}}, {"S", {"Sb", "Ac", "b", epsilon}},
         /* {"E", {"E + T", "T"}}, */
         /* {"T", {"T * F", "F"}}, */
         /* {"F", {"a", "(E)"}}, */
@@ -245,18 +323,23 @@ int main()
     /* std::set<std::string> arr = {"Sa", "Sb", "Aa", "Ab"}; */
     /* findAllCommonPrefixes(arr); */
 
-    Grammar epsGrammar = {
-        {"S", {"ABC", "DS"}},
-        {"A", {epsilon}},
-        {"B", {"AC"}},
-        {"C", {epsilon}},
-        {"D", {"d"}},
-    };
+    /* Grammar epsGrammar = { */
+    /*     {"S", {"ABCd"}}, */
+    /*     {"A", {"a", epsilon}}, */
+    /*     {"B", {"AC"}}, */
+    /*     {"C", {"c", epsilon}}, */
+    /* }; */
 
-    auto epsilonNonterms = findEpsilonNonterms(epsGrammar);
-    std::copy(std::begin(epsilonNonterms), std::end(epsilonNonterms),
-        std::ostream_iterator<std::string>(std::cout, " "));
-    std::cout << std::endl;
+    /* auto epsilonNonterms = findEpsilonNonterms(epsGrammar); */
+    /* std::copy(std::begin(epsilonNonterms), std::end(epsilonNonterms), */
+    /*     std::ostream_iterator<std::string>(std::cout, " ")); */
+    /* std::cout << std::endl; */
+
+    /* auto permutations = findAllPermutations(epsilonNonterms, "eABCdGe"); */
+    /* auto permutations = findAllPermutations({}, "eABCdGe"); */
+    /* std::copy(std::begin(permutations), std::end(permutations), */
+    /*     std::ostream_iterator<std::string>(std::cout, " ")); */
+    /* std::cout << std::endl; */
 
     return 0;
 }
