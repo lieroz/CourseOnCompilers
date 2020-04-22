@@ -39,7 +39,7 @@ static constexpr auto generateNewNonterm = [](auto &&grammar, auto &&nonterm) {
     return newNonterm;
 };
 
-std::vector<std::string> findEpsilonNonterms(const Grammar &grammar)
+std::set<std::string> findEpsilonNonterms(const Grammar &grammar)
 {
     std::queue<std::string> epsilonNonterms;
     std::map<std::string, std::string> reversedGrammar;
@@ -66,11 +66,14 @@ std::vector<std::string> findEpsilonNonterms(const Grammar &grammar)
             {
                 epsilonNonterms.push(nontermI);
             }
-            reversedGrammar.emplace(rule, nontermI);
+            else
+            {
+                reversedGrammar.emplace(rule, nontermI);
+            }
         }
     }
 
-    std::vector<std::string> result;
+    std::set<std::string> result;
     for (; !epsilonNonterms.empty();)
     {
         auto nonterm = epsilonNonterms.front();
@@ -85,7 +88,7 @@ std::vector<std::string> findEpsilonNonterms(const Grammar &grammar)
             }
         }
 
-        result.push_back(nonterm);
+        result.insert(nonterm);
     }
 
     return result;
