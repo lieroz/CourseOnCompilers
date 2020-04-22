@@ -26,3 +26,23 @@ Grammar deleteLongRules(const Grammar &grammar)
 
     return newGrammar;
 }
+
+Grammar deleteChainRules(const Grammar &grammar)
+{
+    Grammar newGrammar = grammar;
+
+    for (auto &&[nonterm, rules]: grammar)
+    {
+        for (auto &&rule: rules)
+        {
+            if (grammar.find(rule) != std::end(grammar))
+            {
+                auto &&tmp = grammar.at(rule);
+                newGrammar[nonterm].erase(rule);
+                newGrammar[nonterm].insert(std::begin(tmp), std::end(tmp));
+            }
+        }
+    }
+
+    return newGrammar;
+}

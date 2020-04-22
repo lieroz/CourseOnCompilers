@@ -16,5 +16,8 @@ int main()
     auto newGrammar2 = removeEpsilonNonterms(newGrammar1);
     print(newGrammar2);
 
+    auto newGrammar3 = deleteChainRules(newGrammar2);
+    print(newGrammar3);
+
     return 0;
 }

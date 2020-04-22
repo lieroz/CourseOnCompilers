@@ -38,6 +38,26 @@ TEST(deleteLongRules, TestsEliminationOfLongRules2)
     ASSERT_THAT(newGrammar["Z"], testing::ElementsAre("ZX"));
 }
 
+TEST(deleteChainRules, TestsEliminationOfChainRules)
+{
+    Grammar grammar = {
+        {"S", {"aS'", "aZ"}},
+        {"S'", {"S''", "XS''"}},
+        {"S''", {"b", "bX"}},
+        {"X", {"a", "aY", "b", "bY"}},
+        {"Y", {"a", "aY", "b", "bY", "cc"}},
+        {"Z", {"Z", "ZX"}},
+    };
+
+    auto newGrammar = deleteChainRules(grammar);
+    ASSERT_THAT(newGrammar["S"], testing::ElementsAre("aS'", "aZ"));
+    ASSERT_THAT(newGrammar["S'"], testing::ElementsAre("XS''", "b", "bX"));
+    ASSERT_THAT(newGrammar["S''"], testing::ElementsAre("b", "bX"));
+    ASSERT_THAT(newGrammar["X"], testing::ElementsAre("a", "aY", "b", "bY"));
+    ASSERT_THAT(newGrammar["Y"], testing::ElementsAre("a", "aY", "b", "bY", "cc"));
+    ASSERT_THAT(newGrammar["Z"], testing::ElementsAre("Z", "ZX"));
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
