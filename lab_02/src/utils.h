@@ -15,7 +15,7 @@ inline auto print = [](auto &&grammar) {
     std::cout << "===\n";
     for (auto &&[nonterm, rules]: grammar)
     {
-        std::cout << "nonterm: " << nonterm << " -> ";
+        std::cout << "nonterm: " << nonterm << " ->  rules: ";
         std::copy(std::begin(rules), --std::end(rules),
             std::ostream_iterator<std::string>(std::cout, " | "));
         std::cout << *(--std::end(rules)) << '\n';
