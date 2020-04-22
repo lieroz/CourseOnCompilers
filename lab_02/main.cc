@@ -1,17 +1,27 @@
 #include "leftutils.h"
+#include "chomskyutils.h"
 
 int main()
 {
+    /* Grammar grammar = { */
+    /*     {"S", {"aS'", "aZ"}}, */
+    /*     {"X", {"aY", "bY", epsilon}}, */
+    /*     {"Y", {"X", "cc"}}, */
+    /*     {"Z", {"ZX"}}, */
+    /*     {"S'", {"XS''"}}, */
+    /*     {"S''", {"yX"}}, */
+    /* }; */
+
+    /* auto newGrammar = removeEpsilonNonterms(grammar); */
+    /* print(newGrammar); */
+
     Grammar grammar = {
-        {"S", {"aS'", "aZ"}},
-        {"X", {"aY", "bY", epsilon}},
-        {"Y", {"X", "cc"}},
-        {"Z", {"ZX"}},
-        {"S'", {"XS''"}},
-        {"S''", {"yX"}},
+        {"S", {"AB"}},
+        {"A", {"aBcB"}},
+        {"B", {"def"}},
     };
 
-    auto newGrammar = removeEpsilonNonterms(grammar);
+    auto newGrammar = deleteLongRules(grammar);
     print(newGrammar);
 
     /* auto newGrammar1 = eliminateLeftRecursion(grammar); */

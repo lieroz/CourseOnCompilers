@@ -1,6 +1,7 @@
 set(TESTS
     utils.cc
     leftutils.cc
+    chomskyutils.cc
 )
 
 foreach(target ${TESTS})
