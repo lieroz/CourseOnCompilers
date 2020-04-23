@@ -10,14 +10,31 @@ int main()
         {"Z", {"ZX"}},
     };
 
-    auto newGrammar1 = deleteLongRules(grammar);
-    print(newGrammar1);
+    print(grammar);
 
-    auto newGrammar2 = removeEpsilonNonterms(newGrammar1);
-    print(newGrammar2);
+    std::cout << "CHOMSKY\n";
+    std::cout << "===\n";
 
-    auto newGrammar3 = deleteChainRules(newGrammar2);
-    print(newGrammar3);
+    auto grammarWithoutLongRules = deleteLongRules(grammar);
+    print(grammarWithoutLongRules);
+
+    auto grammarWithoutEpsilonNonterminals = removeEpsilonNonterms(grammarWithoutLongRules);
+    print(grammarWithoutEpsilonNonterminals);
+
+    auto grammarWithoutChainRules = deleteChainRules(grammarWithoutEpsilonNonterminals);
+    print(grammarWithoutChainRules);
+
+    std::cout << "LEFT RECURSION ELIMINATION\n";
+    std::cout << "===\n";
+
+    auto grammarWithoutLeftRecursion = eliminateLeftRecursion(grammar);
+    print(grammarWithoutLeftRecursion);
+
+    std::cout << "LEFT FACTORING\n";
+    std::cout << "===\n";
+
+    auto leftFactoredGrammar = leftFactoring(grammarWithoutLeftRecursion);
+    print(leftFactoredGrammar);
 
     return 0;
 }
