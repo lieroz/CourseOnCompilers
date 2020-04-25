@@ -41,7 +41,7 @@ constexpr auto generateNewNonterm = [](auto &&grammar, auto &&nonterm) {
     return newNonterm;
 };
 
-static constexpr auto commonPrefixUtil = [](auto &&a, auto &&b) {
+constexpr auto commonPrefixUtil = [](auto &&a, auto &&b) {
     std::string result;
     auto itA = std::begin(a);
     auto itB = std::begin(b);
@@ -52,13 +52,13 @@ static constexpr auto commonPrefixUtil = [](auto &&a, auto &&b) {
     return result;
 };
 
-static constexpr auto commonPrefix = [](auto &&begin, auto &&end) {
+constexpr auto commonPrefix = [](auto &&begin, auto &&end) {
     auto prefix = *begin;
     std::for_each(begin, end, [&](auto &&str) { prefix = commonPrefixUtil(prefix, str); });
     return prefix;
 };
 
-static constexpr auto findAllCommonPrefixes = [](auto &&container) {
+constexpr auto findAllCommonPrefixes = [](auto &&container) {
     std::vector<std::string> prefixes;
 
     auto begin = std::begin(container);
