@@ -167,7 +167,7 @@ void printTree(const Node &tree)
 
 int main()
 {
-    auto &&[tree, _] = buildTree(grammar, grammarStart, "{i=-c;{i=c<(noti+c*c);}}");
+    auto &&[tree, _] = buildTree(grammar, grammarStart, "{i=-c;{i=c<(noti+candc);{i=c!(i*c);}}}");
     if (tree)
     {
         printTree(*tree);
