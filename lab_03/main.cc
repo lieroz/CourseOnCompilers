@@ -1,8 +1,13 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <stack>
 
 #include <iostream>
+
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graphviz.hpp>
 
 using Grammar = std::map<std::string, std::vector<std::vector<std::string>>>;
 
@@ -43,17 +48,17 @@ std::pair<std::optional<Node>, std::string> buildTree(
     {
         if (currentSymbol == epsilon)
         {
-            std::cout << prefix << "IF" << std::endl;
+            std::cout << prefix << "EPSILON" << std::endl;
             return {Node{currentSymbol, {}}, stringToRead};
         }
         else if (currentSymbol == stringToRead.substr(0, currentSymbol.size()))
         {
-            std::cout << prefix << "ELSE IF" << std::endl;
+            std::cout << prefix << "FOUND TERMINAL AT STR START" << std::endl;
             return {Node{currentSymbol, {}}, stringToRead.substr(currentSymbol.size())};
         }
         else
         {
-            std::cout << prefix << "ELSE" << std::endl;
+            std::cout << prefix << "ERROR" << std::endl;
             return {{}, stringToRead};
         }
     }
@@ -82,22 +87,83 @@ std::pair<std::optional<Node>, std::string> buildTree(
 
             if (!flag)
             {
-                std::cout << prefix << "FOUND" << std::endl;
+                std::cout << prefix << "FOUND SUBTREE" << std::endl;
                 return {retNode, newStr};
             }
         }
     }
 
-    std::cout << prefix << "NOT FOUND" << std::endl;
+    std::cout << prefix << "NOT FOUND SUBTREE" << std::endl;
     return {{}, stringToRead};
 }
 
+struct MyVertex
+{
+    std::string label;
+    int id;
+
+    auto key() const
+    {
+        return std::tie(id, label);
+    }
+    bool operator<(const MyVertex &rhs) const
+    {
+        return key() < rhs.key();
+    }
+    bool operator==(const MyVertex &rhs) const
+    {
+        return key() == rhs.key();
+    }
+    bool operator!=(const MyVertex &rhs) const
+    {
+        return key() != rhs.key();
+    }
+};
+
+using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, MyVertex>;
+
 int main()
 {
-    auto &&[tree, str] = buildTree(globalGrammar, grammarStart, "{i=+c;i=c;}");
+    auto &&[tree, _] = buildTree(globalGrammar, grammarStart, "{i=+c;i=c;}");
     if (tree)
     {
-        std::cout << "TREEEEE" << std::endl;
+        Graph graph;
+
+        auto node = [&graph](std::string name, int id) {
+            for (auto &&v: boost::make_iterator_range(vertices(graph)))
+                if (graph[v] == MyVertex{name, id})
+                    return v;
+            return add_vertex({name, id}, graph);
+        };
+
+        size_t count = 0;
+        std::stack<std::pair<Node, size_t>> stack;
+        stack.push({*tree, count});
+
+        while (!stack.empty())
+        {
+            auto [n, num] = stack.top();
+            stack.pop();
+            auto v = node(n.data + " " + std::to_string(num), num);
+
+            for (auto &&child: n.children)
+            {
+                ++count;
+                stack.push({child, count});
+
+                auto v_ = node(child.data + " " + std::to_string(count), count);
+                boost::add_edge(v, v_, graph);
+            }
+        }
+
+        boost::dynamic_properties dp;
+        dp.property("node_id", boost::get(&MyVertex::id, graph));
+        dp.property("label", boost::get(&MyVertex::label, graph));
+
+        std::ofstream file("tree.txt");
+        write_graphviz_dp(file, graph, dp);
+        write_graphviz(file, graph);
     }
+
     return 0;
 }
