@@ -14,12 +14,15 @@ struct MyVertex;
 using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, MyVertex>;
 using Grammar = std::map<std::string, std::vector<std::vector<std::string>>>;
 
-Grammar globalGrammar = {
-    {"expression",
-        {{"simple expression"}, {"simple expression", "relation operation", "simple expression"}}},
-    {"simple expression",
-        {{"term"}, {"sign", "term"}, {"simple expression", "addition type operation", "term"}}},
-    {"term", {{"factor"}, {"factor", "multiplication type operation", "term"}}},
+Grammar grammar = {
+    {"program", {{"block"}}},
+    {"block", {{"{", "operators list", "}"}}},
+    {"operators list", {{"operator", "tail"}}},
+    {"tail", {{";", "operator", "tail"}, {";"}, {"e"}}},
+    {"operator", {{"identifier", "=", "expression"}, {"{", "operators list", "}"}}},
+    {"expression", {{"simple expression", "expression'"}}},
+    {"simple expression", {{"term", "simple expression'"}, {"sign", "term", "simple expression'"}}},
+    {"term", {{"factor", "term'"}}},
     {"factor", {{"identifier"}, {"constant"}, {"(", "simple expression", ")"}, {"not", "factor"}}},
     {"relation operation", {{"=="}, {"!"}, {"<"}, {"<="}, {">"}, {">="}}},
     {"sign", {{"+"}, {"-"}}},
@@ -27,10 +30,9 @@ Grammar globalGrammar = {
     {"multiplication type operation", {{"*"}, {"/"}, {"div"}, {"mod"}, {"and"}}},
     {"identifier", {{"i"}}},
     {"constant", {{"c"}}},
-    {"block", {{"{", "operators list", "}"}}},
-    {"operators list", {{"operator", "tail"}}},
-    {"tail", {{";", "operator", "tail"}, {";"}}},
-    {"operator", {{"block"}, {"identifier", "=", "expression"}}},
+    {"simple expression'", {{"addition type operation", "term", "simple expression'"}, {"e"}}},
+    {"term'", {{"multiplication type operation", "factor", "term'"}, {"e"}}},
+    {"expression'", {{"relation operation", "simple expression"}, {"e"}}},
 };
 
 static const std::string grammarStart = "block";
@@ -165,7 +167,7 @@ void printTree(const Node &tree)
 
 int main()
 {
-    auto &&[tree, _] = buildTree(globalGrammar, grammarStart, "{i=+c;i=c;}");
+    auto &&[tree, _] = buildTree(grammar, grammarStart, "{i=-c;{i=c<(noti+c*c);}}");
     if (tree)
     {
         printTree(*tree);
