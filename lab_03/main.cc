@@ -9,6 +9,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
 
+struct MyVertex;
+
+using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, MyVertex>;
 using Grammar = std::map<std::string, std::vector<std::vector<std::string>>>;
 
 Grammar globalGrammar = {
@@ -120,49 +123,52 @@ struct MyVertex
     }
 };
 
-using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, MyVertex>;
+void printTree(const Node &tree)
+{
+    Graph graph;
+
+    static auto node = [&graph](std::string name, int id) {
+        for (auto &&v: boost::make_iterator_range(vertices(graph)))
+            if (graph[v] == MyVertex{name, id})
+                return v;
+        return add_vertex({name, id}, graph);
+    };
+
+    size_t count = 0;
+    std::stack<std::pair<Node, size_t>> stack;
+    stack.push({tree, count});
+
+    while (!stack.empty())
+    {
+        auto [n, num] = stack.top();
+        stack.pop();
+        auto v = node(n.data + " " + std::to_string(num), num);
+
+        for (auto &&child: n.children)
+        {
+            ++count;
+            stack.push({child, count});
+
+            auto v_ = node(child.data + " " + std::to_string(count), count);
+            boost::add_edge(v, v_, graph);
+        }
+    }
+
+    boost::dynamic_properties dp;
+    dp.property("node_id", boost::get(&MyVertex::id, graph));
+    dp.property("label", boost::get(&MyVertex::label, graph));
+
+    std::ofstream file("tree.txt");
+    write_graphviz_dp(file, graph, dp);
+    write_graphviz(file, graph);
+}
 
 int main()
 {
     auto &&[tree, _] = buildTree(globalGrammar, grammarStart, "{i=+c;i=c;}");
     if (tree)
     {
-        Graph graph;
-
-        auto node = [&graph](std::string name, int id) {
-            for (auto &&v: boost::make_iterator_range(vertices(graph)))
-                if (graph[v] == MyVertex{name, id})
-                    return v;
-            return add_vertex({name, id}, graph);
-        };
-
-        size_t count = 0;
-        std::stack<std::pair<Node, size_t>> stack;
-        stack.push({*tree, count});
-
-        while (!stack.empty())
-        {
-            auto [n, num] = stack.top();
-            stack.pop();
-            auto v = node(n.data + " " + std::to_string(num), num);
-
-            for (auto &&child: n.children)
-            {
-                ++count;
-                stack.push({child, count});
-
-                auto v_ = node(child.data + " " + std::to_string(count), count);
-                boost::add_edge(v, v_, graph);
-            }
-        }
-
-        boost::dynamic_properties dp;
-        dp.property("node_id", boost::get(&MyVertex::id, graph));
-        dp.property("label", boost::get(&MyVertex::label, graph));
-
-        std::ofstream file("tree.txt");
-        write_graphviz_dp(file, graph, dp);
-        write_graphviz(file, graph);
+        printTree(*tree);
     }
 
     return 0;
