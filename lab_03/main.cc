@@ -588,62 +588,58 @@ struct MyVertex
     }
 };
 
-/* void printTree(const Node &tree) */
-/* { */
-/*     Graph graph; */
+using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, MyVertex>;
+using Grammar = std::map<std::string, std::vector<std::vector<std::string>>>;
 
-/*     static auto node = [&graph](std::string name, int id) { */
-/*         for (auto &&v: boost::make_iterator_range(vertices(graph))) */
-/*             if (graph[v] == MyVertex{name, id}) */
-/*                 return v; */
-/*         return add_vertex({name, id}, graph); */
-/*     }; */
+void printTree(const Node &tree)
+{
+    Graph graph;
 
-/*     size_t count = 0; */
-/*     std::stack<std::pair<Node, size_t>> stack; */
-/*     stack.push({tree, count}); */
+    static auto node = [&graph](std::string name, int id) {
+        for (auto &&v: boost::make_iterator_range(vertices(graph)))
+            if (graph[v] == MyVertex{name, id})
+                return v;
+        return add_vertex({name, id}, graph);
+    };
 
-/*     while (!stack.empty()) */
-/*     { */
-/*         auto [n, num] = stack.top(); */
-/*         stack.pop(); */
-/*         auto v = node(n.data + " " + std::to_string(num), num); */
+    size_t count = 0;
+    std::stack<std::pair<Node, size_t>> stack;
+    stack.push({tree, count});
 
-/*         for (auto &&child: n.children) */
-/*         { */
-/*             ++count; */
-/*             stack.push({child, count}); */
+    while (!stack.empty())
+    {
+        auto [n, num] = stack.top();
+        stack.pop();
+        auto v = node(n.data + " " + std::to_string(num), num);
 
-/*             auto v_ = node(child.data + " " + std::to_string(count), count); */
-/*             boost::add_edge(v, v_, graph); */
-/*         } */
-/*     } */
+        for (auto &&child: n.children)
+        {
+            ++count;
+            stack.push({child, count});
 
-/*     boost::dynamic_properties dp; */
-/*     dp.property("node_id", boost::get(&MyVertex::id, graph)); */
-/*     dp.property("label", boost::get(&MyVertex::label, graph)); */
+            auto v_ = node(child.data + " " + std::to_string(count), count);
+            boost::add_edge(v, v_, graph);
+        }
+    }
 
-/*     std::ofstream file("tree.txt"); */
-/*     write_graphviz_dp(file, graph, dp); */
-/*     write_graphviz(file, graph); */
-/* } */
+    boost::dynamic_properties dp;
+    dp.property("node_id", boost::get(&MyVertex::id, graph));
+    dp.property("label", boost::get(&MyVertex::label, graph));
+
+    std::ofstream file("tree.txt");
+    write_graphviz_dp(file, graph, dp);
+    write_graphviz(file, graph);
+}
 
 int main()
 {
-    /* auto &&[tree, _] = buildTree(grammar, grammarStart,
-     * "{i=-c;{i=c<(noti+candc);{i=c!(i*c);}}}"); */
-    /* if (tree) */
-    /* { */
-    /*     printTree(*tree); */
-    /* } */
-
     std::string s = "{a=-b+const<(nota+b)*b;{a=a<>a;{c=const}}}";
-    auto &&[node, str] = accept(s);
+    auto &&[tree, str] = accept(s);
     std::cout << str << std::endl;
 
-    if (node && str.empty())
+    if (tree && str.empty())
     {
-        std::cout << "TREE" << std::endl;
+        printTree(*tree);
     }
 
     return 0;
