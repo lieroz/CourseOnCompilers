@@ -138,12 +138,15 @@ ReturnType Block::accept(std::string_view str)
     auto tree = Node{"Block", {}};
     if (str.front() == '{' && str.back() == '}')
     {
-        if (auto &&[node, newStr] = ::accept<OperatorsList>(str.substr(1, str.size() - 2)); node)
+        if (auto &&[node, newStr] = ::accept<OperatorsList>(str.substr(1)); node)
         {
-            tree.children.push_back({"{", {}});
-            tree.children.push_back(*node);
-            tree.children.push_back({"}", {}});
-            return {tree, newStr};
+            if (newStr.front() == '}')
+            {
+                tree.children.push_back({"{", {}});
+                tree.children.push_back(*node);
+                tree.children.push_back({"}", {}});
+                return {tree, newStr.substr(1)};
+            }
         }
     }
     return {std::nullopt, str};
@@ -296,12 +299,17 @@ ReturnType Factor::accept(std::string_view str)
         tree.children.push_back(*node);
         return {tree, newStr};
     }
-    if (str.front() == '(' && str.back() == ')')
+    if (str.front() == '(')
     {
-        if (auto &&[node, newStr] = ::accept<SimpleExpression>(str.substr(1, str.size() - 2)); node)
+        if (auto &&[node, newStr] = ::accept<SimpleExpression>(str.substr(1)); node)
         {
-            tree.children.push_back(*node);
-            return {tree, newStr};
+            if (newStr.front() == ')')
+            {
+                tree.children.push_back({"(", {}});
+                tree.children.push_back(*node);
+                tree.children.push_back({")", {}});
+                return {tree, newStr.substr(1)};
+            }
         }
     }
     if (str.find("not") == 0)
@@ -603,7 +611,7 @@ int main()
     /*     printTree(*tree); */
     /* } */
 
-    std::string s = "{a=const;a=const;{b=a;}}";
+    std::string s = "{a=-b+const<(nota+b)*b;{a=a<>a}}";
     auto &&[node, str] = accept(s);
     std::cout << str << std::endl;
 
