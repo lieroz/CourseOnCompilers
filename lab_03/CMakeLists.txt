@@ -18,5 +18,5 @@ target_link_libraries(${TARGET} Boost::boost lab_03)
 target_include_directories(${TARGET} PRIVATE ${Boost_INCLUDE_DIRS} src)
 set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
-# enable_testing()
-# add_subdirectory(tst)
+enable_testing()
+add_subdirectory(tst)

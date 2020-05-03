@@ -15,14 +15,14 @@ static const std::vector<std::string> constants = {"const"};
 
 using namespace parser::detail;
 
-ReturnType Block::accept(std::string_view str)
+ReturnType Block::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Block: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Block: " << str << std::endl;
 
     auto tree = Node{"Block", {}};
     if (str.front() == '{' && str.back() == '}')
     {
-        if (auto &&[node, newStr] = ::accept<OperatorsList>(str.substr(1)); node)
+        if (auto &&[node, newStr] = ::accept<OperatorsList>(str.substr(1), depth + 1); node)
         {
             if (newStr.front() == '}')
             {
@@ -36,14 +36,14 @@ ReturnType Block::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType OperatorsList::accept(std::string_view str)
+ReturnType OperatorsList::accept(std::string_view str, size_t depth)
 {
-    std::cout << "OperatorsList: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "OperatorsList: " << str << std::endl;
 
     auto tree = Node{"OperatorsList", {}};
-    if (auto &&[node1, newStr1] = ::accept<Operator>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<Operator>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<Tail>(newStr1); node2)
+        if (auto &&[node2, newStr2] = ::accept<Tail>(newStr1, depth + 2); node2)
         {
             tree.children.push_back(*node1);
             tree.children.push_back(*node2);
@@ -53,16 +53,16 @@ ReturnType OperatorsList::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType Tail::accept(std::string_view str)
+ReturnType Tail::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Tail: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Tail: " << str << std::endl;
 
     auto tree = Node{"Tail", {}};
     if (str.front() == ';')
     {
-        if (auto &&[node1, newStr1] = ::accept<Operator>(str.substr(1)); node1)
+        if (auto &&[node1, newStr1] = ::accept<Operator>(str.substr(1), depth + 1); node1)
         {
-            if (auto &&[node2, newStr2] = ::accept<Tail>(newStr1); node2)
+            if (auto &&[node2, newStr2] = ::accept<Tail>(newStr1, depth + 2); node2)
             {
                 tree.children.push_back({";", {}});
                 tree.children.push_back(*node1);
@@ -76,16 +76,16 @@ ReturnType Tail::accept(std::string_view str)
     return {tree, str};
 }
 
-ReturnType Operator::accept(std::string_view str)
+ReturnType Operator::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Operator: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Operator: " << str << std::endl;
 
     auto tree = Node{"Operator", {}};
-    if (auto &&[node1, newStr1] = ::accept<Identifier>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<Identifier>(str, depth + 1); node1)
     {
         if (newStr1.front() == '=')
         {
-            if (auto &&[node2, newStr2] = ::accept<Expression>(newStr1.substr(1)); node2)
+            if (auto &&[node2, newStr2] = ::accept<Expression>(newStr1.substr(1), depth + 2); node2)
             {
                 tree.children.push_back(*node1);
                 tree.children.push_back({"=", {}});
@@ -95,7 +95,7 @@ ReturnType Operator::accept(std::string_view str)
         }
     }
 
-    if (auto &&[node, newStr] = ::accept<Block>(str); node)
+    if (auto &&[node, newStr] = ::accept<Block>(str, depth + 1); node)
     {
         tree.children.push_back(*node);
         return {tree, newStr};
@@ -103,14 +103,14 @@ ReturnType Operator::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType Expression::accept(std::string_view str)
+ReturnType Expression::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Expression: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Expression: " << str << std::endl;
 
     auto tree = Node{"Expression", {}};
-    if (auto &&[node1, newStr1] = ::accept<SimpleExpression>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<SimpleExpression>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<Expression1>(newStr1); node2)
+        if (auto &&[node2, newStr2] = ::accept<Expression1>(newStr1, depth + 2); node2)
         {
             tree.children.push_back(*node1);
             tree.children.push_back(*node2);
@@ -120,14 +120,14 @@ ReturnType Expression::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType SimpleExpression::accept(std::string_view str)
+ReturnType SimpleExpression::accept(std::string_view str, size_t depth)
 {
-    std::cout << "SimpleExpression: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "SimpleExpression: " << str << std::endl;
 
     auto tree = Node{"SimpleExpression", {}};
-    if (auto &&[node1, newStr1] = ::accept<Term>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<Term>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<SimpleExpression1>(newStr1); node2)
+        if (auto &&[node2, newStr2] = ::accept<SimpleExpression1>(newStr1, depth + 2); node2)
         {
             tree.children.push_back(*node1);
             tree.children.push_back(*node2);
@@ -135,11 +135,11 @@ ReturnType SimpleExpression::accept(std::string_view str)
         }
     }
 
-    if (auto &&[node1, newStr1] = ::accept<Sign>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<Sign>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<Term>(newStr1); node1)
+        if (auto &&[node2, newStr2] = ::accept<Term>(newStr1, depth + 2); node1)
         {
-            if (auto &&[node3, newStr3] = ::accept<SimpleExpression1>(newStr2); node1)
+            if (auto &&[node3, newStr3] = ::accept<SimpleExpression1>(newStr2, depth + 3); node1)
             {
                 tree.children.push_back(*node1);
                 tree.children.push_back(*node2);
@@ -151,14 +151,14 @@ ReturnType SimpleExpression::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType Term::accept(std::string_view str)
+ReturnType Term::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Term: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Term: " << str << std::endl;
 
     auto tree = Node{"Term", {}};
-    if (auto &&[node1, newStr1] = ::accept<Factor>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<Factor>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<Term1>(newStr1); node2)
+        if (auto &&[node2, newStr2] = ::accept<Term1>(newStr1, depth + 2); node2)
         {
             tree.children.push_back(*node1);
             tree.children.push_back(*node2);
@@ -168,24 +168,24 @@ ReturnType Term::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType Factor::accept(std::string_view str)
+ReturnType Factor::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Factor: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Factor: " << str << std::endl;
 
     auto tree = Node{"Factor", {}};
-    if (auto &&[node, newStr] = ::accept<Identifier>(str); node)
+    if (auto &&[node, newStr] = ::accept<Identifier>(str, depth + 1); node)
     {
         tree.children.push_back(*node);
         return {tree, newStr};
     }
-    if (auto &&[node, newStr] = ::accept<Constant>(str); node)
+    if (auto &&[node, newStr] = ::accept<Constant>(str, depth + 1); node)
     {
         tree.children.push_back(*node);
         return {tree, newStr};
     }
     if (str.front() == '(')
     {
-        if (auto &&[node, newStr] = ::accept<SimpleExpression>(str.substr(1)); node)
+        if (auto &&[node, newStr] = ::accept<SimpleExpression>(str.substr(1), depth + 1); node)
         {
             if (newStr.front() == ')')
             {
@@ -198,7 +198,7 @@ ReturnType Factor::accept(std::string_view str)
     }
     if (str.find("not") == 0)
     {
-        if (auto &&[node, newStr] = ::accept<Factor>(str.substr(3)); node)
+        if (auto &&[node, newStr] = ::accept<Factor>(str.substr(3), depth + 1); node)
         {
             tree.children.push_back(*node);
             return {tree, newStr};
@@ -208,9 +208,9 @@ ReturnType Factor::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType RelationOperation::accept(std::string_view str)
+ReturnType RelationOperation::accept(std::string_view str, size_t depth)
 {
-    std::cout << "RelationOperation: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "RelationOperation: " << str << std::endl;
 
     auto tree = Node{"RelationOperation", {}};
     for (auto &&op: relationalOperators)
@@ -224,9 +224,9 @@ ReturnType RelationOperation::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType Sign::accept(std::string_view str)
+ReturnType Sign::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Sign: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Sign: " << str << std::endl;
 
     auto tree = Node{"Sign", {}};
     for (auto &&sign: signs)
@@ -240,9 +240,9 @@ ReturnType Sign::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType AdditionOperation::accept(std::string_view str)
+ReturnType AdditionOperation::accept(std::string_view str, size_t depth)
 {
-    std::cout << "AdditionOperation: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "AdditionOperation: " << str << std::endl;
 
     auto tree = Node{"AdditionOperation", {}};
     for (auto &&op: additionOperators)
@@ -256,9 +256,9 @@ ReturnType AdditionOperation::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType MultiplicationOperation::accept(std::string_view str)
+ReturnType MultiplicationOperation::accept(std::string_view str, size_t depth)
 {
-    std::cout << "MultiplicationOperation: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "MultiplicationOperation: " << str << std::endl;
 
     auto tree = Node{"MultiplicationOperation", {}};
     for (auto &&op: multiplicationOperators)
@@ -272,9 +272,9 @@ ReturnType MultiplicationOperation::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType Identifier::accept(std::string_view str)
+ReturnType Identifier::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Identifier: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Identifier: " << str << std::endl;
 
     auto tree = Node{"Identifier", {}};
     for (auto &&identifier: identifiers)
@@ -302,9 +302,9 @@ ReturnType Identifier::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType Constant::accept(std::string_view str)
+ReturnType Constant::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Constant: " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Constant: " << str << std::endl;
 
     auto tree = Node{"Constant", {}};
     for (auto &&constant: constants)
@@ -333,16 +333,16 @@ ReturnType Constant::accept(std::string_view str)
     return {std::nullopt, str};
 }
 
-ReturnType SimpleExpression1::accept(std::string_view str)
+ReturnType SimpleExpression1::accept(std::string_view str, size_t depth)
 {
-    std::cout << "SimpleExpression': " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "SimpleExpression': " << str << std::endl;
 
     auto tree = Node{"SimpleExpression'", {}};
-    if (auto &&[node1, newStr1] = ::accept<AdditionOperation>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<AdditionOperation>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<Term>(newStr1); node2)
+        if (auto &&[node2, newStr2] = ::accept<Term>(newStr1, depth + 2); node2)
         {
-            if (auto &&[node3, newStr3] = ::accept<SimpleExpression1>(newStr2); node3)
+            if (auto &&[node3, newStr3] = ::accept<SimpleExpression1>(newStr2, depth + 3); node3)
             {
                 tree.children.push_back(*node1);
                 tree.children.push_back(*node2);
@@ -356,16 +356,16 @@ ReturnType SimpleExpression1::accept(std::string_view str)
     return {tree, str};
 }
 
-ReturnType Term1::accept(std::string_view str)
+ReturnType Term1::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Term': " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Term': " << str << std::endl;
 
     auto tree = Node{"Term'", {}};
-    if (auto &&[node1, newStr1] = ::accept<MultiplicationOperation>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<MultiplicationOperation>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<Factor>(newStr1); node2)
+        if (auto &&[node2, newStr2] = ::accept<Factor>(newStr1, depth + 2); node2)
         {
-            if (auto &&[node3, newStr3] = ::accept<Term1>(newStr2); node3)
+            if (auto &&[node3, newStr3] = ::accept<Term1>(newStr2, depth + 3); node3)
             {
                 tree.children.push_back(*node1);
                 tree.children.push_back(*node2);
@@ -379,14 +379,14 @@ ReturnType Term1::accept(std::string_view str)
     return {tree, str};
 }
 
-ReturnType Expression1::accept(std::string_view str)
+ReturnType Expression1::accept(std::string_view str, size_t depth)
 {
-    std::cout << "Expression': " << str << std::endl;
+    std::cout << std::string(depth, '\t') << "Expression': " << str << std::endl;
 
     auto tree = Node{"Expression'", {}};
-    if (auto &&[node1, newStr1] = ::accept<RelationOperation>(str); node1)
+    if (auto &&[node1, newStr1] = ::accept<RelationOperation>(str, depth + 1); node1)
     {
-        if (auto &&[node2, newStr2] = ::accept<SimpleExpression>(newStr1); node2)
+        if (auto &&[node2, newStr2] = ::accept<SimpleExpression>(newStr1, depth + 2); node2)
         {
             tree.children.push_back(*node1);
             tree.children.push_back(*node2);
