@@ -21,6 +21,9 @@ struct Node
     std::list<Node> children;
 };
 
+static const std::set<std::string> identifiers = {"a", "b", "c"};
+static const std::set<std::string> constants = {"const"};
+
 using ReturnType = std::pair<std::optional<Node>, std::string_view>;
 
 struct GrammarElement
@@ -91,17 +94,11 @@ struct MultiplicationOperation : GrammarElement
 struct Identifier : GrammarElement
 {
     ReturnType accept(std::string_view) override;
-
-private:
-    std::set<std::string> identifiers = {"a", "b"};
 };
 
 struct Constant : GrammarElement
 {
     ReturnType accept(std::string_view) override;
-
-private:
-    std::set<std::string> constants = {"const"};
 };
 
 struct SimpleExpression1 : GrammarElement
@@ -445,8 +442,22 @@ ReturnType Identifier::accept(std::string_view str)
     {
         if (str.find(identifier) == 0)
         {
-            tree.children.push_back({identifier, {}});
-            return {tree, str.substr(identifier.size())};
+            bool canBeConstant = false;
+            for (auto it = std::begin(constants); it != std::end(constants) && !canBeConstant; ++it)
+            {
+                if (str.find(*it) == 0)
+                {
+                    tree.data = "Constant";
+                    tree.children.push_back({*it, {}});
+                    return {tree, str.substr(it->size())};
+                }
+            }
+
+            if (!canBeConstant)
+            {
+                tree.children.push_back({identifier, {}});
+                return {tree, str.substr(identifier.size())};
+            }
         }
     }
     return {std::nullopt, str};
@@ -461,8 +472,23 @@ ReturnType Constant::accept(std::string_view str)
     {
         if (str.find(constant) == 0)
         {
-            tree.children.push_back({constant, {}});
-            return {tree, str.substr(constant.size())};
+            bool canBeIdentifier = false;
+            for (auto it = std::begin(identifiers); it != std::end(identifiers) && !canBeIdentifier;
+                 ++it)
+            {
+                if (str.find(*it) == 0)
+                {
+                    tree.data = "Identifier";
+                    tree.children.push_back({*it, {}});
+                    return {tree, str.substr(it->size())};
+                }
+            }
+
+            if (!canBeIdentifier)
+            {
+                tree.children.push_back({constant, {}});
+                return {tree, str.substr(constant.size())};
+            }
         }
     }
     return {std::nullopt, str};
@@ -611,7 +637,7 @@ int main()
     /*     printTree(*tree); */
     /* } */
 
-    std::string s = "{a=-b+const<(nota+b)*b;{a=a<>a}}";
+    std::string s = "{a=-b+const<(nota+b)*b;{a=a<>a;{c=const}}}";
     auto &&[node, str] = accept(s);
     std::cout << str << std::endl;
 
