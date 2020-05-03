@@ -1,8 +1,5 @@
-#include <map>
 #include <list>
 #include <vector>
-#include <stack>
-#include <algorithm>
 #include <iostream>
 
 #include <boost/graph/graph_traits.hpp>
@@ -21,8 +18,16 @@ struct Node
     std::list<Node> children;
 };
 
-static const std::set<std::string> identifiers = {"a", "b", "c"};
-static const std::set<std::string> constants = {"const"};
+/*
+ * First add operators which are longer if they may conflict
+ * For example: '<', '<>' and '<=' are in conflict, so '<' must go last
+ */
+static const std::vector<std::string> relationalOperators = {"==", "<>", "<=", ">=", "<", ">"};
+static const std::vector<std::string> signs = {"+", "-"};
+static const std::vector<std::string> additionOperators = {"+", "-", "or"};
+static const std::vector<std::string> multiplicationOperators = {"*", "/", "div", "mod", "and"};
+static const std::vector<std::string> identifiers = {"a", "b", "c"};
+static const std::vector<std::string> constants = {"const"};
 
 using ReturnType = std::pair<std::optional<Node>, std::string_view>;
 
@@ -326,35 +331,13 @@ ReturnType RelationOperation::accept(std::string_view str)
     std::cout << "RelationOperation: " << str << std::endl;
 
     auto tree = Node{"RelationOperation", {}};
-    if (str.find("==") == 0)
+    for (auto &&op: relationalOperators)
     {
-        tree.children.push_back({"==", {}});
-        return {tree, str.substr(2)};
-    }
-    else if (str.find("<>") == 0)
-    {
-        tree.children.push_back({"<>", {}});
-        return {tree, str.substr(2)};
-    }
-    else if (str.find("<") == 0)
-    {
-        tree.children.push_back({"<", {}});
-        return {tree, str.substr(1)};
-    }
-    else if (str.find("<=") == 0)
-    {
-        tree.children.push_back({"<=", {}});
-        return {tree, str.substr(2)};
-    }
-    else if (str.find(">") == 0)
-    {
-        tree.children.push_back({">", {}});
-        return {tree, str.substr(1)};
-    }
-    else if (str.find(">=") == 0)
-    {
-        tree.children.push_back({">=", {}});
-        return {tree, str.substr(2)};
+        if (str.find(op) == 0)
+        {
+            tree.children.push_back({op, {}});
+            return {tree, str.substr(op.size())};
+        }
     }
     return {std::nullopt, str};
 }
@@ -364,15 +347,13 @@ ReturnType Sign::accept(std::string_view str)
     std::cout << "Sign: " << str << std::endl;
 
     auto tree = Node{"Sign", {}};
-    if (str.front() == '+')
+    for (auto &&sign: signs)
     {
-        tree.children.push_back({"+", {}});
-        return {tree, str.substr(1)};
-    }
-    else if (str.front() == '-')
-    {
-        tree.children.push_back({"-", {}});
-        return {tree, str.substr(1)};
+        if (str.find(sign) == 0)
+        {
+            tree.children.push_back({sign, {}});
+            return {tree, str.substr(sign.size())};
+        }
     }
     return {std::nullopt, str};
 }
@@ -382,20 +363,13 @@ ReturnType AdditionOperation::accept(std::string_view str)
     std::cout << "AdditionOperation: " << str << std::endl;
 
     auto tree = Node{"AdditionOperation", {}};
-    if (str.front() == '+')
+    for (auto &&op: additionOperators)
     {
-        tree.children.push_back({"+", {}});
-        return {tree, str.substr(1)};
-    }
-    else if (str.front() == '-')
-    {
-        tree.children.push_back({"-", {}});
-        return {tree, str.substr(1)};
-    }
-    else if (str.find("or") == 0)
-    {
-        tree.children.push_back({"or", {}});
-        return {tree, str.substr(2)};
+        if (str.find(op) == 0)
+        {
+            tree.children.push_back({op, {}});
+            return {tree, str.substr(op.size())};
+        }
     }
     return {std::nullopt, str};
 }
@@ -405,30 +379,13 @@ ReturnType MultiplicationOperation::accept(std::string_view str)
     std::cout << "MultiplicationOperation: " << str << std::endl;
 
     auto tree = Node{"MultiplicationOperation", {}};
-    if (str.front() == '*')
+    for (auto &&op: multiplicationOperators)
     {
-        tree.children.push_back({"*", {}});
-        return {tree, str.substr(1)};
-    }
-    else if (str.front() == '/')
-    {
-        tree.children.push_back({"/", {}});
-        return {tree, str.substr(1)};
-    }
-    else if (str.find("div") == 0)
-    {
-        tree.children.push_back({"div", {}});
-        return {tree, str.substr(3)};
-    }
-    else if (str.find("mod") == 0)
-    {
-        tree.children.push_back({"mod", {}});
-        return {tree, str.substr(3)};
-    }
-    else if (str.find("and") == 0)
-    {
-        tree.children.push_back({"and", {}});
-        return {tree, str.substr(3)};
+        if (str.find(op) == 0)
+        {
+            tree.children.push_back({op, {}});
+            return {tree, str.substr(op.size())};
+        }
     }
     return {std::nullopt, str};
 }
@@ -633,7 +590,7 @@ void printTree(const Node &tree)
 
 int main()
 {
-    std::string s = "{a=-b+const<(nota+b)*b;{a=a<>a;{c=const}}}";
+    std::string s = "{a=-b+const<(nota+b)*bdiva;{a=a<>a;{c=const}}}";
     auto &&[tree, str] = accept(s);
     std::cout << str << std::endl;
 
