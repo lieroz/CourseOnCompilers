@@ -1,40 +1,15 @@
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
+#include "lisp.h"
+
 #include <list>
 #include <map>
 #include <numeric>
+#include <istream>
+#include <ostream>
 
-enum class CellType
+namespace lisp
 {
-    Symbol,
-    Number,
-    List,
-    Proc,
-    Lambda
-};
-
-struct Environment;  // forward declaration; Cell and Environment reference each other
-
-// a variant that can hold any kind of lisp value
-struct Cell
-{
-    CellType type;
-
-    std::string val;
-    std::vector<Cell> list;
-    std::function<Cell(const std::vector<Cell> &)> proc;
-
-    std::shared_ptr<Environment> env;
-
-    Cell(CellType type = CellType::Symbol) : type(type) {}
-    Cell(CellType type, const std::string &val) : type(type), val(val) {}
-    Cell(std::function<Cell(const std::vector<Cell> &)> proc) : type(CellType::Proc), proc(proc) {}
-};
-
 static const Cell False(CellType::Symbol, "#f");
-static const Cell True(CellType::Symbol, "#t");  // anything that isn't false_sym is true
+static const Cell True(CellType::Symbol, "#t");
 static const Cell Nil(CellType::Symbol, "nil");
 
 // a dictionary that (a) associates symbols with std::vector<Cell>, and
@@ -64,7 +39,7 @@ struct Environment
             return ptr->find(var);  // attempt to find the symbol in some "outer" env
         }
 
-        throw std::runtime_error("Unbound symbol '" + var + "\n");
+        throw std::runtime_error("Unbound symbol '" + var + "'");
     }
 
     // return a reference to the Cell associated with the given symbol 'var'
@@ -257,8 +232,8 @@ Cell eval(Cell x, std::shared_ptr<Environment> env)
             x.env = env;
             return x;
         }
-        if (x.list[0].val == "begin")
-        {  // (begin exp*)
+        if (x.list[0].val == "begin")  // (begin exp*)
+        {
             for (size_t i = 1; i < x.list.size() - 1; ++i)
             {
                 eval(x.list[i], env);
@@ -266,6 +241,7 @@ Cell eval(Cell x, std::shared_ptr<Environment> env)
             return eval(x.list[x.list.size() - 1], env);
         }
     }
+
     // (proc exp*)
     Cell proc(eval(x.list[0], env));
     std::vector<Cell> exps;
@@ -355,15 +331,13 @@ Cell readFrom(std::list<std::string> &tokens)
     return Nil;
 }
 
-// return the Lisp expression represented by the given string
 Cell read(std::string_view str)
 {
     auto tokens = tokenize(str);
     return readFrom(tokens);
 }
 
-// convert given Cell to a Lisp-readable string
-std::string to_string(Cell exp)
+std::string toString(Cell exp)
 {
     switch (exp.type)
     {
@@ -374,7 +348,7 @@ std::string to_string(Cell exp)
 
             for (auto &&e: exp.list)
             {
-                str += space + to_string(e);
+                str += space + toString(e);
                 space = " ";
             }
             return str + ')';
@@ -388,7 +362,6 @@ std::string to_string(Cell exp)
     }
 }
 
-// the default read-eval-print-loop
 void repl(std::istream &input,
     std::ostream &output,
     std::string_view prompt,
@@ -402,17 +375,12 @@ void repl(std::istream &input,
 
         try
         {
-            output << to_string(eval(read(line), env)) << '\n';
+            output << toString(eval(read(line), env)) << '\n';
         }
         catch (const std::runtime_error &err)
         {
-            output << err.what();
+            output << err.what() << '\n';
         }
     }
 }
-
-int main()
-{
-    repl(std::cin, std::cout, "lispy> ", init());
-    return 0;
-}
+}  // namespace lisp
